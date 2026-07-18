@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: us-accidents-analysis
+Version: 0.1.0
+Summary: Reusable data preparation and statistical utilities for U.S. accident severity analysis
+Requires-Python: >=3.10
+Requires-Dist: dash>=2.18
+Requires-Dist: dash-bootstrap-components>=1.6
+Requires-Dist: numpy>=1.26
+Requires-Dist: pandas>=2.0
+Requires-Dist: plotly>=5.20
+Requires-Dist: scikit-learn>=1.4
+Requires-Dist: scipy>=1.11
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.9; extra == "dev"

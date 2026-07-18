@@ -10,7 +10,7 @@ Run:
 python3 build_tableau_exports.py
 ```
 
-This creates `/Applications/GitHub/US Accidents (2016-2023)/tableau_exports` with:
+This creates `tableau_exports/` by default. Set `US_ACCIDENTS_EXPORT_DIR` to use another location.
 
 - `01_master_sample.csv`  
   Main cleaned sample for flexible Tableau work
