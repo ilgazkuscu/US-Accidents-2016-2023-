@@ -24,9 +24,18 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from us_accidents import (
+    cache_dir,
+    cohens_d,
+    collapse_categories,
+    cramers_v,
+    load_profile_sample,
+    resolve_dataset_csv,
+    two_proportion_z_test,
+)
 
-LOCAL_DATASET_DIR = Path.home() / ".cache" / "kagglehub" / "datasets" / "sobhanmoosavi" / "us-accidents" / "versions" / "13"
-CACHE_DIR = Path("/Applications/GitHub/US Accidents (2016-2023)/data_cache")
+
+CACHE_DIR = cache_dir()
 
 PALETTE = {
     "ink": "#1F2933",
@@ -90,13 +99,6 @@ MODEL_FEATURES = [
 ]
 
 
-def find_csv_path() -> Path:
-    csv_files = sorted(LOCAL_DATASET_DIR.glob("*.csv"))
-    if not csv_files:
-        raise FileNotFoundError("US Accidents CSV not found in the local kagglehub cache.")
-    return csv_files[0]
-
-
 def style_figure(fig: go.Figure) -> go.Figure:
     fig.update_layout(
         paper_bgcolor="white",
@@ -120,45 +122,10 @@ def format_num(value) -> str:
     return str(value)
 
 
-def collapse_categories(series: pd.Series, top_n: int = 8) -> pd.Series:
-    series = series.fillna("Missing").astype(str)
-    top = series.value_counts().head(top_n).index
-    return series.where(series.isin(top), "Other")
-
-
 def p_value_text(p_value: float) -> str:
     if p_value < 0.001:
         return "< 0.001"
     return f"{p_value:.4f}"
-
-
-def two_proportion_z_test(success_a, size_a, success_b, size_b):
-    p_pool = (success_a + success_b) / (size_a + size_b)
-    se = np.sqrt(p_pool * (1 - p_pool) * ((1 / size_a) + (1 / size_b)))
-    if se == 0:
-        return np.nan, np.nan
-    z_stat = ((success_a / size_a) - (success_b / size_b)) / se
-    p_value = 2 * (1 - stats.norm.cdf(abs(z_stat)))
-    return z_stat, p_value
-
-
-def cramers_v(contingency: pd.DataFrame) -> float:
-    chi2 = stats.chi2_contingency(contingency)[0]
-    n = contingency.to_numpy().sum()
-    if n == 0:
-        return np.nan
-    r, k = contingency.shape
-    denom = min(k - 1, r - 1)
-    return np.nan if denom <= 0 else np.sqrt((chi2 / n) / denom)
-
-
-def cohens_d(group_a: pd.Series, group_b: pd.Series) -> float:
-    n1, n2 = len(group_a), len(group_b)
-    if n1 < 2 or n2 < 2:
-        return np.nan
-    s1, s2 = group_a.std(ddof=1), group_b.std(ddof=1)
-    pooled = np.sqrt(((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2))
-    return 0.0 if pooled == 0 else (group_a.mean() - group_b.mean()) / pooled
 
 
 def build_summary_table(df: pd.DataFrame) -> pd.DataFrame:
@@ -182,17 +149,6 @@ def build_summary_table(df: pd.DataFrame) -> pd.DataFrame:
             "Observed Range / Top Values": rng,
         })
     return pd.DataFrame(rows)
-
-
-def load_profile_sample(csv_path: Path) -> pd.DataFrame:
-    usecols = [meta["Feature"] for meta in VARIABLES]
-    df = pd.read_csv(csv_path, usecols=usecols, nrows=120_000)
-    df["Start_Time"] = pd.to_datetime(df["Start_Time"], errors="coerce", format="mixed")
-    df["Hour"] = df["Start_Time"].dt.hour
-    df["Month"] = df["Start_Time"].dt.month
-    df["Weekday"] = df["Start_Time"].dt.day_name()
-    df["Severe"] = df["Severity"] >= 3
-    return df
 
 
 def build_overview_metrics(df: pd.DataFrame) -> list[tuple[str, str]]:
@@ -647,8 +603,8 @@ def metric_card(title: str, value: str, delay: int = 0):
     )
 
 
-CSV_PATH = find_csv_path()
-PROFILE_DF = load_profile_sample(CSV_PATH)
+CSV_PATH = resolve_dataset_csv()
+PROFILE_DF = load_profile_sample(CSV_PATH, [meta["Feature"] for meta in VARIABLES])
 SUMMARY_DF = build_summary_table(PROFILE_DF)
 OVERVIEW_METRICS = build_overview_metrics(PROFILE_DF)
 OVERVIEW_FIGS = build_overview_figures(PROFILE_DF)
