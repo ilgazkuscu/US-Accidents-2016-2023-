@@ -2,6 +2,7 @@
 .idea/
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .venv/
@@ -9,4 +10,3 @@ data/*.csv
 data/*.parquet
 data_cache/
 tableau_exports/
-
